@@ -19,7 +19,8 @@ One of the major reason for this is suspected to be the amount of stagnant
 water around residencies. There are many areas around urban residential places
 such as terraces of high rise buildings, and shades above windows
 (popularly known as `chhajja') that are hard to reach and hence to inspect. We
-use quadcopter to inspect such areas and detect whether there is stagnant water.
+used quadcopter to inspect such areas and detect whether there is stagnant
+water.
 
 \end{abstract}
 
@@ -51,9 +52,9 @@ use drones to catch mosquitoes for detection of pathogens in them before these
 pathogens make people sick. But for sending drones to catch mosquitoes we first
 need to find out possible mosquito breeding areas such as water puddles. We
 propose a method in which we manuevere a quadcopter to record video of the
-place, and later process that video to identify the frames which contain water
-puddle, which will in turn aid in the process of identifying that place for
-further action.
+whole place, and later process that video to identify the frames which contain
+water puddle, which will in turn aid in the process of identifying particular
+areas for further action.
 
 \begin{figure}[h!]
 \centering
@@ -102,7 +103,31 @@ as Saturation. Also, reflective parts of puddle has high intensity.}
 \label{fig:HSV}
 \end{figure}
 
-\cite{Chapelle99}
+Under ambient lighting conditions, puddle areas display high brightness and low
+saturation~\cite{rankin04}. Hence, features that capture this information locally
+could be used for puddle detection. Hence, considering a square image patch of
+small side dimension, $n$, a novel feature is used that performs the following
+steps:
+\begin{enumerate}
+\item it is transformed from RGB color domain to HSV color space.
+\item histogram for each channel having k bins is constructed
+\item the histogram values for three channels are concatenated to form a vector
+of length $3k$.
+\end{enumerate}
+ 
+Here, to capture sufficient statistics as well as constrain the feature size,
+no. of bins, k = 64 is chosen, such that each bin contains 4 consecutive gray
+levels. Also, the side of square patch is taken as $n = 16$ to capture local
+characteristics.
+
+The given feature is used to train a Support Vector Machine(SVM) using a
+dataset of positively and negatively marked puddle patches. The
+positively-labelled patches are manually marked from a grid of size $m$ pixels
+overlaid on frames captured using quadcopter. The negatively-labelled patches
+are chosen from the remaining patches of the aforementioned grid with
+percentage of such patches as parameter, $l$. Since RBF kernels have been useful
+to efficiently detect textures~\cite{Chapelle99}, it has been used for the given
+classifier. In our experiments, values of $m = 50$ and $l = 0.1$ were used.
 
 \subsubsection{Creation of training Data}
 
@@ -118,6 +143,13 @@ the user drawn contour.}
 \label{fig:training}
 \end{figure}
 
+\textbf{Failure cases of SVM :- }
+The svm detector is strong at detecting regions of sky reflected off a puddle.
+In the HSV color space, these regions have low saturation (S) and high
+brightness (V) values, and are picked up with high reliability by the HSV
+histogram feature based SVM detector. However, other reflected regions such as
+trees, buildings, etc. are usually classified as non-puddle regions as these
+are labeled as such in the training images.
 
 \subsection{Optical flow based technique}
 Optical flow measures apparent motion of objects in a scene caused by relative
@@ -157,17 +189,33 @@ the input images. We record Inertial Measurment Unit (IMU) data
 transmitted by quadcopter, which in turn provides us the approximate position of
 the quadcopter at given time. Later, we synchronize it with the video sequence
 captured by quadcopter, to find out approximate position from which the given
-frame is captured. Finallt, we select frame pair which is nearest, among set of
+frame is captured. Finally, we select frame pair which is nearest, among set of
 temporally adjacent frames to find out the optical flow.
+
+\textbf{Failure cases of optical flow}
+Optical flow is essentially being used in a depth from parallax mode to exploit
+the fact that still puddles behave like mirrors and scenery reflected by such
+puddles is usually at a much greater depth than the immediate surroundings of
+the puddle. Correspondingly, optical flow as a means of detecting puddles will
+fail when the above assumption fails, such as when the reflected objects are
+close by. Optical flow also generates false positives when the scene contains a
+far off portion partially occluded by nearby objects.
  
+
 \subsection{Combined approach}
 \begin{figure}[h!]
 \centering
 \includegraphics[width=\linewidth]{images/overall_workflow.pdf}
-\caption{}
+\caption{Overall workflow to detect stangant water.}
 \label{fig:workflow}
 \end{figure}
 
+As illustrated workflow Figure \ref{fig:workflow}, intially the first image of
+the input frame pair is divided into square patches. The SVM classifier is
+applied to each patch and the corresponding distance from margin has been used
+as a score. The given score provides a likelihood of the patch being puddle. A
+grid of the scores is returned as output, which is combined with results from
+optical flow stage.
 
 \section{Experiments and Results}
 \subsection{Datasets}
