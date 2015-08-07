@@ -8,7 +8,7 @@
 \usepackage[cmex10]{amsmath}
 \usepackage{url} 
 
-\title{Stagnant Water Detection Using quadcopter}
+\title{Stagnant Water Detection in Urban Area Using quadcopter}
 \author{}
 \def\iccvPaperID{238}
 \begin{document}
@@ -21,7 +21,10 @@ water around residencies. There are many areas around urban residential places
 such as terraces of high rise buildings, and shades above windows
 (popularly known as `chhajja') that are hard to reach and hence to inspect. We
 used quadcopter to inspect such areas and detect whether there is stagnant
-water.
+water. We have proposed a method which combines Support Vector Machine (SVM)
+based classifer with optical flow based technique to reliably detect the
+stagnant water puddle in the captured video. Qualitative comparison shows
+superiority of our method over method available in literature.
 
 \end{abstract}
 
@@ -29,20 +32,23 @@ water.
 {\color{red} [MGP] Need to cut short the introduction}
 
 Dengue~\cite{WHO15Dengue} and Malaria~\cite{WHO15Malaria} are among the deadly
-diseases common in at least 100 countries in Asia, the Pacific, the Americas,
-Africa, and the Caribbean. In India itself there are around one million Malaria
-cases ~\cite{NVBDP_Malaria} and fourty thousand cases of dengue
-~\cite{NVBDP_Dengue} in year 2014. The disease is transmitted by the biting of
-mosquitoes and if not appropriately treated, people may have recurrences of the
-disease months later \cite{Cecilia14}. These mosquitoes flourish during rainy seasons but can breed
-in water-filled flower pots, plastic bags, and cans year-round. Stagnant water
-is major site for breeding of these mosquitoes.
+diseases common in at least 100 countries all over the world with exception of
+Europe continent. In India itself there are around one million Malaria
+cases~\cite{NVBDP_Malaria} and fourty thousand cases of
+dengue~\cite{NVBDP_Dengue} in year 2014. The disease is transmitted by the
+biting of mosquitoes and if not appropriately treated, people may have
+recurrences of the disease months later~\cite{Cecilia14}. These mosquitoes
+flourish during rainy seasons but can breed in water-filled flower pots,
+plastic bags, and cans year-round. Stagnant water is major site for breeding of
+these mosquitoes.
 
 The risk of disease can be reduced by preventing mosquito bites by using
-mosquito nets and insect repellents, or with mosquito-control measures such as
-spraying insecticides and draining standing water.  Even though major measures
-are in exercise since 90’s till now, we have not succeeded in eradicating these
-diseases. One of the major reasons behind this is existence of water-puddles
+mosquito nets and insect repellents. Also, we may take mosquito-control
+measures such as spraying insecticides, fogging etc. China has reportedly
+used sterile mosquitoes~\cite{china} to fight dengue fever.  But, such measures
+may prove dangerous to environment as well as eco-system. Plus, even though major
+measures are in exercise, we have not succeeded in eradicating these diseases. One of
+the major reasons behind this may be the continuous existence of water-puddles
 around urban residential places.
 
 Some areas such as high rise buildings' terraces, construction sites, area
@@ -112,27 +118,32 @@ could be used for puddle detection. Hence, considering a square image patch of
 small side dimension, $n$, a novel feature is used that performs the following
 steps:
 \begin{enumerate}
-\item it is transformed from RGB color domain to HSV color space.
-\item histogram for each channel having k bins is constructed
-\item the histogram values for three channels are concatenated to form a vector
+\item Image is transformed from RGB color domain to HSV color space.
+\item Histogram for each channel having k bins is constructed
+\item The histogram values for three channels are concatenated to form a vector
 of length $3k$.
 \end{enumerate}
  
 Here, to capture sufficient statistics as well as constrain the feature size,
-no. of bins, k = 64 is chosen, such that each bin contains 4 consecutive gray
-levels. Also, the side of square patch is taken as $n = 16$ to capture local
+number of bins, k = 64 is chosen, such that each bin contains 4 consecutive gray
+levels. Also, the side of square patch is taken as $n = 50$ to capture local
 characteristics.
 
 The given feature is used to train a Support Vector Machine(SVM) using a
 dataset of positively and negatively marked puddle patches. The
-positively-labelled patches are manually marked from a grid of size $m$ pixels
-overlaid on frames captured using quadcopter. The negatively-labelled patches
-are chosen from the remaining patches of the aforementioned grid with
-percentage of such patches as parameter, $l$. Since RBF kernels have been useful
-to efficiently detect textures~\cite{Chapelle99}, it has been used for the given
-classifier. In our experiments, values of $m = 50$ and $l = 0.1$ were used.
+positively-labelled as well as negatively-labelled patches are manually marked
+from a grid of size $m$ pixels overlaid on frames captured using quadcopter.
+Since RBF kernels have been useful to efficiently detect
+textures~\cite{Chapelle99}, it has been used for the given classifier. In our
+experiments, values of $m = 16$ is used.
 
 \subsubsection{Creation of training Data}
+We have created a tool to select training data for the classifier. In this tool,
+image will be shown in grid fashion with block size of $50  \times 50$. 
+User will be enabled to draw contour over the desired region (puddle or
+non-puddle). The blocks enclosed by the contour will be selected. Additionally
+user may select additonally select blocks or deselect the selected blocks. The
+proces is shown in Figure~\ref{fig:training}.
 
 \begin{figure}[h!]
 \centering
@@ -141,8 +152,7 @@ classifier. In our experiments, values of $m = 50$ and $l = 0.1$ were used.
 drawing a contour over input frame (using our tool). User can additionally
 select/deselect blocks which he/she thinks are belonging to puddle/non-puddle
 area. We use blocks covered by user drawn contour as `positive' training data.
-While the `negative' training data is selected from blocks which are far from
-the user drawn contour.}
+Similarly, the `negative' training data may be selected.}
 \label{fig:training}
 \end{figure}
 
@@ -175,10 +185,10 @@ suroundings.}
 \end{figure}
 
 It can be seen that, the reflective part of the puddle have less optical flow
-magnitude compared to its neighborhood. The reason behind this is, the reflected objects being quite far
-from the actual puddle, the relative motion will be less compared to its
-neighbourhood. So, we can use this property to detect water puddle regions from
-the image.
+magnitude compared to its neighborhood. The reason behind this is, the
+reflected objects being quite far from the actual puddle, the relative motion
+will be less compared to its neighbourhood. So, we can use this property to
+detect water puddle regions from the image.
 
 We are using an algorithm  developed by Ce Liu~\cite{Liu11Thesis} which is based
 on \cite{Brox04,Bruhn05} to find out optical flow. (The Matlab/C++ code for this
@@ -213,19 +223,24 @@ far off portion partially occluded by nearby objects.
 \label{fig:workflow}
 \end{figure}
 
-As illustrated workflow Figure \ref{fig:workflow}, intially the first image of
-the input frame pair is divided into square patches. The SVM classifier is
-applied to each patch and the corresponding distance from margin has been used
-as a score. The given score provides a likelihood of the patch being puddle. A
-grid of the scores is returned as output, which is combined with results from
-optical flow stage.
+As illustrated in Figure \ref{fig:workflow}, first we select frames in
+pairs from the captured video. Basically, the two frames which are
+spatially as well temporally near are chosen as a pair.  Now, first frame will
+be sent to SVM classifier to find the SVM score, while pair is used to find the
+optical flow magnitude. Meanwhile, we use the first frame to find the horizon
+from the scene. Horizon detection is  based on the longest near horizontal
+line ($-5 \leq \theta \leq 5$). We create a mask using this line; the pixels
+above the line are marked as zero while rest of the pixels are marked one. 
+The mask is used while calculating normalized scores, SVM as well as optical
+flow, so that the part above the line do not contribute in finding relative
+score of puddle regions. Finally, the product of two scores is taken and
+later thresholded to get puddle regions. 
 
 \section{Experiments and Results}
-\subsection{Datasets}
 
 \subsection{Comparison with prior technique}
-\subsection{Quantitative analysis}
-\section{Comclusion and Future Work}
+
+\section{Conclusion and Future Work}
 
 \bibliographystyle{IEEEtran}
 \bibliography{egbib}
