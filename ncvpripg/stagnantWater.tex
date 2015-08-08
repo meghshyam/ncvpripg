@@ -6,7 +6,8 @@
 \usepackage{times}
 \usepackage[pdftex]{graphicx}	
 \usepackage[cmex10]{amsmath}
-\usepackage{url} 
+\usepackage{url}
+\usepackage{hyperref} 
 
 \title{Stagnant Water Detection in Urban Area Using quadcopter}
 \author{}
@@ -102,13 +103,13 @@ of these two approaches to detect stagnant water robustly.
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.22\linewidth]{images/IMG_PAIR_1_1.jpg}
-\includegraphics[width=0.22\linewidth]{images/IMG_PAIR_1_1_H.jpg}
-\includegraphics[width=0.22\linewidth]{images/IMG_PAIR_1_1_S.jpg}
-\includegraphics[width=0.22\linewidth]{images/IMG_PAIR_1_1_V.jpg}
+\includegraphics[width=0.22\linewidth]{images/IMG_PAIR_27_1.jpg}
+\includegraphics[width=0.22\linewidth]{images/IMG_PAIR_27_1_H.jpg}
+\includegraphics[width=0.22\linewidth]{images/IMG_PAIR_27_1_S.jpg}
+\includegraphics[width=0.22\linewidth]{images/IMG_PAIR_27_1_V.jpg}
 \caption{Sample image and their Hue (H), Saturation (S) and Value (V) components
-respectively. It can be seen that puddle area has very less Hue as well
-as Saturation. Also, reflective parts of puddle has high intensity.}
+respectively. It can be seen that puddle area has very less Saturation. Also,
+reflective parts of puddle has high intensity.}
 \label{fig:HSV}
 \end{figure}
 
@@ -173,9 +174,9 @@ captured from quadcopter, consisting of water puddle region.
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.3\linewidth]{images/IMG_PAIR_1_1.jpg}
-\includegraphics[width=0.3\linewidth]{images/IMG_PAIR_1_2.jpg}
-\includegraphics[width=0.3\linewidth]{images/optical_flow_magnitude.jpg}
+\includegraphics[width=0.3\linewidth]{images/IMG_PAIR_27_1.jpg}
+\includegraphics[width=0.3\linewidth]{images/IMG_PAIR_27_2.jpg}
+\includegraphics[width=0.3\linewidth]{images/IMG_PAIR_27_optical_flow.jpg}
 \caption{Optical Flow. Left, middle: video frames taken from positions
 which are $d$ units apart in 3D world. $ 0.01 \leq d \leq 0.1$. Right:
 Magnitude of optical flow calculated from earlier images. Magnitude of optical
@@ -213,7 +214,6 @@ the puddle. Correspondingly, optical flow as a means of detecting puddles will
 fail when the above assumption fails, such as when the reflected objects are
 close by. Optical flow also generates false positives when the scene contains a
 far off portion partially occluded by nearby objects.
- 
 
 \subsection{Combined approach}
 \begin{figure}[h!]
@@ -227,20 +227,116 @@ As illustrated in Figure \ref{fig:workflow}, first we select frames in
 pairs from the captured video. Basically, the two frames which are
 spatially as well temporally near are chosen as a pair.  Now, first frame will
 be sent to SVM classifier to find the SVM score, while pair is used to find the
-optical flow magnitude. Meanwhile, we use the first frame to find the horizon
-from the scene. Horizon detection is  based on the longest near horizontal
-line ($-5 \leq \theta \leq 5$). We create a mask using this line; the pixels
-above the line are marked as zero while rest of the pixels are marked one. 
-The mask is used while calculating normalized scores, SVM as well as optical
-flow, so that the part above the line do not contribute in finding relative
-score of puddle regions. Finally, the product of two scores is taken and
-later thresholded to get puddle regions. 
+optical flow magnitude. Meanwhile we find out horizon from the first image to
+filter in possible puddle areas. 
+
+\textbf{Horizon Detection :- }
+The change in depth for far-away scenes as well as their reflections on puddle,
+in consecutive frames, are hard to distinguish. In previous work \cite{rankin11}
+such issues are avoided by discarding a fixed-portion of image corresponding to
+far-off regions, enforced by constrained input capture method. Due to
+inapplicability of such constraints in comparatively agile input capture
+conditions of quadcopter, features derived from urban environment are utilized
+for finding plausible puddle regions. In urban setting, the high availability
+of structures in surroundings, having distinctly flat surfaces and rectilinear
+silhouettes, enables use of edge-detection based methods to bound planar
+regions that can contain puddle. Applying hough transform with calibrated
+parameters followed by length-based selection of lines detected, a upper
+boundary for puddle region called `Horizon' is found. The Horizon is in turn
+used to create a binary mask to be applied to local scores from other
+techniques before normalization.
+
+The SVM scores are obtained from classifier correspond to each patch of size, m
+( m = 16 as mentioned in section), while for computational efficiency, optical
+flow is performed on frames downsampled to half of the original dimensions.
+But, to obtain a combined estimate based on both techniques, scores for a
+common patch size are necessary. Hence, the optical flow scores are divided
+into a grid of size $m/2$ pixels, each sub-patch of which are averaged to
+obtain the final optical flow score.
+
+The combined score obtained from optical flow and SVM classifier provides a
+probabilistic estimate of corresponding patch belonging a puddle. But, in order
+to include contribution towards the estimate based on neighbourhood
+information, a sequence of morphological operations are applied on the
+combined score. From the resulting score, a mask denoting puddle region is
+obtained by thresholding based on statistical parameters.
 
 \section{Experiments and Results}
+All our experiments have been completed with the inexpensive consumer
+quadcopter called a Parrot's AR Drone 2.0. We have used the ROS based
+ARDrone Autonomy Driver to communicate with the drone. For the purpose
+of showing the efficacy of this paper, we also took a picture of the
+scene from a distance with a 5 mega-pixel camera to better understand
+the scene. Primarily we covered urban places such as terraces, constructions
+sites, building backyards, pumping stations etc.
+
+We have implemented our algorithm in Matlab R2014a. Experiments were performed
+on a PC with Intel Core i7 processor(@3.4GHz) and 8GB RAM.  The source code
+detect stagnant water regions in images from a video, as well as the data sets
+used in this paper will be made publicly available.
 
 \subsection{Comparison with prior technique}
+Comparison of proposed method's output and \cite{rankin04} on representative
+images on some of the datasets is shown in Figure \ref{fig:comparison}.
 
+\begin{figure}
+\centering
+\includegraphics[width=0.31\linewidth]{images/results/dataset_63full/IMG_PAIR_102_1.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_63full/output_102_jpl2.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_63full/output_102.jpg}\\
+
+\includegraphics[width=0.31\linewidth]{images/results/dataset_73/IMG_PAIR_124_1.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_73/output_124_jpl2.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_73/output_124.jpg}\\
+
+\includegraphics[width=0.31\linewidth]{images/results/dataset_81/IMG_PAIR_1_1.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_81/output_1_jpl2.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_81/output_1.jpg}\\
+
+\includegraphics[width=0.31\linewidth]{images/results/dataset_82/IMG_PAIR_192_1.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_82/output_192_jpl2.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_82/output_192.jpg}\\
+	
+\includegraphics[width=0.31\linewidth]{images/results/dataset_83/IMG_PAIR_130_1.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_83/output_130_jpl2.jpg}
+\includegraphics[width=0.31\linewidth]{images/results/dataset_83/output_130.jpg}\\
+	
+\caption{Comparison of proposed method with Rankin et al.~\cite{rankin04}.
+\textbf{Left:} Original Image, \textbf{Middle:} Output of Rankin et
+al.~\cite{rankin04}'s method, \textbf{Right:} Proposed method's output. It can
+be seen that Rankin et al's method is not able to detect textured puddle
+regions. Also, it is getting confused with high intesity non-puddle patches as
+puddle patches. While our method is detecting the puddle regions with higher accuracy.}
+\label{fig:comparison}
+\end{figure}
+ 
 \section{Conclusion and Future Work}
+Detection of stagnant water around residential places has become crucial
+due to rise in cases of dengue and malaria in urban areas. In this paper, we
+proposed a novel technique for detection of inaccessible stagnant-water puddles
+in urban areas using aerial devices like quadcopters.
+The method proposed involved assigning a probabilistic measure to image patches
+in input image frames, indicating likelihood of it being a puddle. The measure
+was obtained by combined by scores from a pre-trained SVM-based classifier and
+optical flow from suitable consecutive image frames. It is shown that
+qualitatively our approach produces better results in a variety of urban
+scenarios.
+
+Although the work done in the current paper produces favourable results for
+given scenarios. Nevertheless, the results can be improved and the scope
+extended in the following directions:
+\begin{itemize}
+  \item Determination of Horizon from environmental cues could be improved and made
+  more robust in order to deal with factors such as illumination changes,
+  occlusions and unavailability of artifacts. Also, the parameters involved
+  could be automatically estimated through training.
+  \item The score obtained from optical flow magnitudes could be improved by
+  using the directional components separately, and combine them with
+  corresponding quadcopter motion vectors like velocity and acceleration.
+  \item The feature using for classifier to obtain the SVM score could be
+  modified to produce greater separation between puddle and non-puddle region
+  patches.
+\end{itemize}
 
 \bibliographystyle{IEEEtran}
 \bibliography{egbib}
